@@ -1,12 +1,12 @@
-# 封禁时间
+-- 封禁时间
 local ip_block_time=300 
-# 访问的时间范围
+-- 访问的时间范围
 local ip_time_out=30  
-# 访问IP计数  
+-- 访问IP计数  
 local ip_max_count=20 
 
 
-# 连接redis
+-- 连接redis
 local redis = require "resty.redis"  
 local conn = redis:new()  
 ok, err = conn:connect("127.0.0.1", 6379)  
