@@ -1,6 +1,6 @@
 -- 功能： 限流脚本
 -- Date： 2020/4/27
--- Ver： 0.1
+-- Ver： 0.2
 
 
 
@@ -13,35 +13,54 @@ local delay=0.8
 local white_ip={'10.10.10.101'}
 local dealy_switch = on
 --local passwd=os.getenv('redis_passwd')
-
-
+--[[ local list={ip_block_time='300',ip_time_out='30',ip_max_count='20',ip_brust='10',delay='0.8',dealy_switch='on'}
+local white_ip={'10.10.10.101'}
+ ]]
 -- 连接redis
 local redis = require "resty.redis"  
 local conn = redis:new()  
 ok, err = conn:connect("127.0.0.1", 6379)  
 conn:set_timeout(2000) 
-if not ok then
-    goto CLOSE
+if not ok then  
+    --goto CLOSE
+    local ok, err = conn:close()
+    return
 end
 
 -- 认证
-res, error = conn:get_reused_times()
+local res, error = conn:get_reused_times()
+ngx.log(ngx.ERR,'res:',res,"error",error)
 if 0 == res then
-    auth_ok, auth_error = conn:auth("2345")
+    local auth_ok, auth_error = conn:auth("1234")
     if not auth_ok then
         ngx.log(ngx.ERR,"failed to auth redis: ", auth_err)
-        goto CLOSE        
+        --goto CLOSE
+        local ok, err = conn:close()
+        return        
     end
 --[[ elseif err then
     ngx.say("failed to get reused times: ", err)
     return ]]
 end
 
+-- 初始化参数，开关
+
+--[[ for key,val in ipairs(list)
+do 
+    res,err = conn:get(key)
+    if not res then
+        res1,err1 = conn:set(key,val)
+    end
+end
+ ]]
+
+
 -- 白名单
 for _,ip in ipairs(white_ip)
 do 
     if ngx.var.clientRealIp == ip then
-        goto PASS
+        --goto PASS
+        return
     end
 end
 
@@ -78,19 +97,24 @@ else
 end
 
 -- 连接池
-kep_ok, kep_err = conn:set_keepalive(10000, 100)
-if not kep_ok then
-    ngx.log(ngx.ERR,"failed to set keepalive: ", kep_err)
+local ok, err = conn:set_keepalive(10000, 100)
+if not ok then
+    ngx.log(ngx.ERR,"failed to set keepalive: ",err)
+    return
+    
         
 end
 
 
 ::CLOSE::
-clo_ok, clo_err = conn:close()
+
+local ok, err = conn:close()
+
+
 
 ::PASS::
-kep_ok, kep_err = conn:set_keepalive(10000, 100)
-if not kep_ok then
-    ngx.log(ngx.ERR,"failed to set keepalive: ", kep_err)
+kep_ok1, kep_err1 = conn:set_keepalive(10000, 100)
+if not kep_ok1 then
+    ngx.log(ngx.ERR,"failed to set keepalive: ", kep_err1)
         
 end
